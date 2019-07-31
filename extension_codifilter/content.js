@@ -1,4 +1,4 @@
-var strReplace = /뎐삼]/gi; // 차단할 닉네임입니다.
+var strReplace = /[뎐삼]/gi; // 차단할 닉네임입니다.
 
 
 function delete_row(e)
