@@ -1,0 +1,17 @@
+{
+"manifest_version": 2,
+    "name": "게임코디차단",
+    "description": "게임코디 지정 유저 차단기능",
+    "version": "0.03",
+    "content_scripts": [
+        {
+            "matches": [
+                "*://*.gamecodi.com/*"
+            ],
+            "js": [
+                "content.js"
+            ],
+            "run_at": "document_end"
+        }
+    ]
+}
