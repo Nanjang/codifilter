@@ -1,56 +1,39 @@
-var strReplace = /[뎐삼]/gi; // 차단할 닉네임입니다.
+
+// 차단될 닉네임입니다.
+var strDel = "뎐삼";
 
 
-function delete_row(e)
-{
-	var row = e.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode;
-	//if(row.tagName == 'TR' && e.parentNode.parentNode.className != 'box02a_bbsabody')
-	if(row.tagName == 'TR')
-	{
-		row.parentNode.replaceChild(document.createElement('TR'), row);
-	}
-};
-
+var strReplace = new RegExp("[" + strDel + "]", "gi");
 
 function check_writer(writer)
 {
-	var temp = "" + writer;
-	var oriName = temp.replace("/[", "").replace("]/gi", "");
-
-	var strCheck = 'style="cursor:hand">'+oriName+'</span></b>&nbsp;';		// 작성자 부분 야매로 떼옴
+	var strCheck = 'style="cursor:hand">'+strDel+'</span></b>&nbsp;';		// 작성자 부분 야매로 떼옴
 	var checkElem = document.documentElement.innerHTML;
 
 	var bWriter = checkElem.indexOf(strCheck) != -1;
 
 	// 차단유저가 작성한 글이면 뒤로 보냅니돠...
 	if(bWriter)
-	{
 		history.back();
-	}
 }
 
+var DeleteTypeEnum = Object.freeze({"main":1, "list":2, "comment":3});		// Enum Type
 
-// 게시글의 댓글 삭제
-function delete_row_comment(e)
+function delete_row(e, type)
 {
-	var row = e.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode;
-	if(row.tagName == 'TR')
+	var row;
+	switch(type)
 	{
-		row.parentNode.replaceChild(document.createElement('TR'), row);
+		case DeleteTypeEnum.main : row = e.parentNode.parentNode.parentNode; break;
+		case DeleteTypeEnum.list : row = e.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode; break;
+		case DeleteTypeEnum.comment : row = e.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode; break;
+		default:
+			return;
 	}
-}
 
-
-
-// 메인화면에서의 리스트 삭제
-function delete_row_main(e)
-{
-	var row = e.parentNode.parentNode.parentNode;
 	if(row.tagName == 'TR')
-	{
 		row.parentNode.replaceChild(document.createElement('TR'), row);
-	}
-}
+};
 
 
 var strCurrentURL= window.location.href;		// URL을 얻어옵니다.
@@ -78,105 +61,69 @@ strCurrentURL.indexOf("GAMECODI_Talk") != -1				// 일상만담
 var strReplaceString = '[차단8]';
 var bUnknown = strCurrentURL.indexOf("GAMECODI_Resign") != -1;	 // 익명게시판 여부. 추후 익게 별도 필터링이 필요한 경우 씁시다. (해시)
 
-if(bMain)	// 메인페이지에서 지웁니다.
+var elements = document.getElementsByTagName('span');		// 검사 할 리스트
+var elementsToRemove = new Array();						// 지울 목록 배열
+var elementsToRemoveComment = new Array();						// 지울 목록 배열
+
+/*
+	차단유저 글 삭제 처리 순서.
+	1. 글 내용 보기인지 체크
+	-> 차단유저글이면 백
+	2. 댓글 삭제
+	3. 메인/리스트에서 삭제
+*/
+
+if(bDetail)	// 작성글 상세 보기
 {
-	var elements = document.getElementsByTagName('span');
-	var elementsToRemoveMain = new Array();						// 지울 목록 배열
+	check_writer(strReplace);	// 글쓴이 체크
+
 
 	for (var i = 0; i < elements.length; i++) 
 	{
 		var element = elements[i];
-
-		for (var j = 0; j < element.childNodes.length; j++) 
+		if(element.parentNode)
 		{
-			var node = element.childNodes[j];
-			if (node.nodeType == 3) 
-			{
-				var text = node.nodeValue;
-				var replacedText = text.replace( strReplace, strReplaceString + element.tagName );
+			var checkComment = "" + element.parentNode.innerHTML;
+			var checkString = 'style="cursor:hand">'+strDel+'</span>';
+			var bComment = checkComment.indexOf(checkString) != -1;
 
-				if (replacedText !== text) 
-				{
-					elementsToRemoveMain.push(node);				
-					break;
-				}
-			}
+			if(bComment)
+				elementsToRemoveComment.push(element);
 		}
 	}
 
-	for (var i = 0; i < elementsToRemoveMain.length; i++)
-	{
-		delete_row_main(elementsToRemoveMain[i]);
-	}
-
+	for (var i = 0; i < elementsToRemoveComment.length; i++)
+		delete_row(elementsToRemoveComment[i], DeleteTypeEnum.comment);
 }
-else
+
+for (var i = 0; i < elements.length; i++) 
 {
-	if(bMemberBoard)
+	var element = elements[i];
+
+	for (var j = 0; j < element.childNodes.length; j++) 
 	{
-		if(bDetail)	// 작성글 상세 보기
+		var node = element.childNodes[j];
+		if (node.nodeType == 3) 
 		{
-			check_writer(strReplace);	// 글쓴이 체크
-			// 이제 댓글을 삭제하도록 하죠
+			var text = node.nodeValue;
+			var replacedText = text.replace( strReplace, strReplaceString + element.tagName );
 
-			var elements = document.getElementsByTagName('span');
-			var elementsToRemoveComment = new Array();						// 지울 목록 배열
-
-			for (var i = 0; i < elements.length; i++) 
+			if (replacedText !== text) 
 			{
-				var element = elements[i];
-				if(element.parentNode)
-				{
-					var checkComment = "" + element.parentNode.innerHTML;
-					var temp = "" + strReplace;
-					var oriName = temp.replace("/[", "").replace("]/gi", "");
-					var checkString = 'style="cursor:hand">'+oriName+'</span>';
-					var bComment = checkComment.indexOf(checkString) != -1;
-
-					if(bComment)
-					{
-						elementsToRemoveComment.push(element);
-					}
-				}
+				elementsToRemove.push(node);				
+				break;
 			}
-
-			for (var i = 0; i < elementsToRemoveComment.length; i++)
-			{
-				delete_row_comment(elementsToRemoveComment[i]);
-			}
-
-
-		}
-		
-		// 게시글 목록
-		var elementsToRemove = new Array();						// 지울 목록 배열
-		var elements = document.getElementsByTagName('span');
-
-		for (var i = 0; i < elements.length; i++) 
-		{
-			var element = elements[i];
-
-			for (var j = 0; j < element.childNodes.length; j++) 
-			{
-				var node = element.childNodes[j];
-				if (node.nodeType == 3) 
-				{
-					var text = node.nodeValue;
-
-					var replacedText = text.replace( strReplace, strReplaceString + element.tagName );
-
-					if (replacedText !== text) 
-					{
-						elementsToRemove.push(node);				
-						break;
-					}
-				}
-			}
-		}
-
-		for (var i = 0; i < elementsToRemove.length; i++)
-		{
-			delete_row(elementsToRemove[i]);
 		}
 	}
 }
+
+var DeleteMode = DeleteTypeEnum.list;
+if(bMain)
+	DeleteMode = DeleteTypeEnum.main;
+
+for (var i = 0; i < elementsToRemove.length; i++)
+	delete_row(elementsToRemove[i], DeleteMode);
+
+
+
+

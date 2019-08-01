@@ -1,12 +1,15 @@
 {
 "manifest_version": 2,
-    "name": "게임코디차단",
-    "description": "게임코디 지정 유저 차단기능",
-    "version": "0.03",
+    "name": "게임코디 필터",
+    "description": "게임코디의 특정 유저 차단기능",
+    "version": "0.04",
+    "browser_action":{
+	"default_icon": "icon.png"
+    },
     "content_scripts": [
         {
             "matches": [
-                "*://*.gamecodi.com/*"
+                "*://www.gamecodi.com/*"
             ],
             "js": [
                 "content.js"
