@@ -1,20 +1,26 @@
 
-// 차단될 닉네임입니다.
-var strDel = "뎐삼";
+// 차단될 닉네임들입니다.
+var strDel = ["던삼", "메이스군", "게임쿄디"];
 
 
-var strReplace = new RegExp("[" + strDel + "]", "gi");
+var strReplace = new Array();
+
+for(var cnt = 0; cnt < strDel.length; cnt++)
+	strReplace.push(new RegExp(strDel[cnt], "gi")); // 일부 일치에서 전체 일치로 변경. 한글자라도 일치하면 애꿎은 유저도 차단됨.
 
 function check_writer(writer)
 {
-	var strCheck = 'style="cursor:hand">'+strDel+'</span></b>&nbsp;';		// 작성자 부분 야매로 떼옴
-	var checkElem = document.documentElement.innerHTML;
+	for(var cnt = 0; cnt < strDel.length; cnt++)
+	{
+		var strCheck = 'style="cursor:hand">'+strDel[cnt]+'</span></b>&nbsp;';		// 작성자 부분 야매로 떼옴
+		var checkElem = document.documentElement.innerHTML;
 
-	var bWriter = checkElem.indexOf(strCheck) != -1;
+		var bWriter = checkElem.indexOf(strCheck) != -1;
 
-	// 차단유저가 작성한 글이면 뒤로 보냅니돠...
-	if(bWriter)
-		history.back();
+		// 차단유저가 작성한 글이면 뒤로 보냅니돠...
+		if(bWriter)
+			history.back();
+	}
 }
 
 var DeleteTypeEnum = Object.freeze({"main":1, "list":2, "comment":3});		// Enum Type
@@ -75,7 +81,8 @@ var elementsToRemoveComment = new Array();						// 지울 목록 배열
 
 if(bDetail)	// 작성글 상세 보기
 {
-	check_writer(strReplace);	// 글쓴이 체크
+	for(var cnt = 0; cnt < strReplace.length; cnt++)
+		check_writer(strReplace[cnt]);	// 글쓴이 체크
 
 
 	for (var i = 0; i < elements.length; i++) 
@@ -84,11 +91,19 @@ if(bDetail)	// 작성글 상세 보기
 		if(element.parentNode)
 		{
 			var checkComment = "" + element.parentNode.innerHTML;
-			var checkString = 'style="cursor:hand">'+strDel+'</span>';
-			var bComment = checkComment.indexOf(checkString) != -1;
+			var checkString = "";
+			var bComment = false;
 
-			if(bComment)
-				elementsToRemoveComment.push(element);
+			for(var cnt = 0; cnt < strDel.length; cnt++)
+			{
+				checkString = 'style="cursor:hand">'+strDel[cnt]+'</span>';
+				bComment = checkComment.indexOf(checkString) != -1;
+				if(bComment)
+				{
+					elementsToRemoveComment.push(element);
+					break;
+				}
+			}
 		}
 	}
 
@@ -106,20 +121,26 @@ for (var i = 0; i < elements.length; i++)
 		if (node.nodeType == 3) 
 		{
 			var text = node.nodeValue;
-			var replacedText = text.replace( strReplace, strReplaceString + element.tagName );
+			var bAdded = false;
 
-			if (replacedText !== text) 
+			for(var cnt = 0; cnt < strReplace.length; cnt++)
 			{
-				elementsToRemove.push(node);				
-				break;
+				var replacedText = text.replace( strReplace[cnt], strReplaceString + element.tagName );
+
+				if (replacedText !== text) 
+				{
+					elementsToRemove.push(node);		
+					bAdded = true;
+					break;
+				}
 			}
+			if(bAdded)
+				break;
 		}
 	}
 }
 
-var DeleteMode = DeleteTypeEnum.list;
-if(bMain)
-	DeleteMode = DeleteTypeEnum.main;
+var DeleteMode = bMain ? DeleteTypeEnum.main : DeleteTypeEnum.list;
 
 for (var i = 0; i < elementsToRemove.length; i++)
 	delete_row(elementsToRemove[i], DeleteMode);

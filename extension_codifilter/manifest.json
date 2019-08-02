@@ -2,7 +2,7 @@
 "manifest_version": 2,
     "name": "게임코디 필터",
     "description": "게임코디의 특정 유저 차단기능",
-    "version": "0.04",
+    "version": "0.05",
     "browser_action":{
 	"default_icon": "icon.png"
     },
